@@ -10,9 +10,10 @@ import { macAnaliziGetir, aiKuponOlustur, type SihirbazStratejisi } from '@/lib/
 import KolonOnizlemeModal from '@/components/KolonOnizlemeModal';
 import AiSihirbaz from '@/components/AiSihirbaz';
 import AuthModal from '@/components/AuthModal';
+import TopluBultenModal from '@/components/TopluBultenModal';
 import {
   Trophy, TrendingDown, Zap, Info, CheckCircle,
-  AlertCircle, Star, ArrowRight, Download, Share2, Sparkles, Cloud
+  AlertCircle, Star, ArrowRight, Download, Share2, Sparkles, Cloud, Edit3, ClipboardList
 } from 'lucide-react';
 import { GUNCEL_LISTE } from '@/store/kupon-store';
 import Link from 'next/link';
@@ -38,6 +39,7 @@ export default function KuponSayfasi() {
 
   const [duzenlemeModu, setDuzenlemeModu] = useState(false);
   const [modalAcik, setModalAcik] = useState(false);
+  const [bultenModalAcik, setBultenModalAcik] = useState(false);
   const [authModalAcik, setAuthModalAcik] = useState(false);
   const [kaydediliyor, setKaydediliyor] = useState(false);
   const formuller = tumFormullerKarsilastir(kolonSayisi);
@@ -157,12 +159,19 @@ export default function KuponSayfasi() {
                 {GUNCEL_LISTE.tarihAralik} · sportoto.gov.tr'den alındı
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <button
-                className="btn-secondary text-sm"
+                className="btn-secondary text-xs flex items-center gap-1.5 py-2 px-3"
+                onClick={() => setBultenModalAcik(true)}
+              >
+                <ClipboardList size={14} color="#818cf8" />
+                Bülteni Yapıştır / Düzenle
+              </button>
+              <button
+                className="btn-secondary text-xs py-2 px-3"
                 onClick={() => setDuzenlemeModu(!duzenlemeModu)}
               >
-                {duzenlemeModu ? 'Düzenlemeyi Kapat' : 'Takım Adı Düzenle'}
+                {duzenlemeModu ? 'Bitti' : 'İsimleri Değiştir'}
               </button>
             </div>
           </div>
@@ -548,6 +557,14 @@ export default function KuponSayfasi() {
       <AuthModal
         acik={authModalAcik}
         onKapat={() => setAuthModalAcik(false)}
+      />
+
+      {/* Toplu Bülten Yapıştır Modalı */}
+      <TopluBultenModal
+        acik={bultenModalAcik}
+        onKapat={() => setBultenModalAcik(false)}
+        mevcutMaclar={maclar}
+        onGuncelle={(yeni) => setMaclar(yeni)}
       />
     </div>
   );

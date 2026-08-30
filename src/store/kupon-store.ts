@@ -20,21 +20,21 @@ export const GUNCEL_LISTE = {
 
 function baslangicMaclar(): Mac[] {
   const macVerileri: { t1: string; t2: string; tarih: string; lig: string; tip: MacTipi; secimler: MacSecim[] }[] = [
-    { t1: 'Eyüpspor',           t2: 'Alanyaspor',         tarih: '30.08 19:00', lig: 'Süper Lig',   tip: 'cift',  secimler: ['1', 'X'] },
-    { t1: 'Başakşehir',         t2: 'Kasımpaşa',          tarih: '30.08 21:30', lig: 'Süper Lig',   tip: 'banko', secimler: ['1'] },
-    { t1: 'Samsunspor',         t2: 'Fenerbahçe',         tarih: '30.08 21:30', lig: 'Süper Lig',   tip: 'cift',  secimler: ['X', '2'] },
-    { t1: 'Amed Sportif',       t2: 'Trabzonspor',        tarih: '31.08 21:30', lig: 'Süper Lig',   tip: 'banko', secimler: ['2'] },
-    { t1: 'Beşiktaş',           t2: 'Çorum FK',           tarih: '31.08 21:30', lig: 'Süper Lig',   tip: 'banko', secimler: ['1'] },
-    { t1: 'Galatasaray',        t2: 'Kayserispor',        tarih: '31.08 19:00', lig: 'Süper Lig',   tip: 'banko', secimler: ['1'] },
-    { t1: 'Konyaspor',          t2: 'Antalyaspor',        tarih: '31.08 19:00', lig: 'Süper Lig',   tip: 'cift',  secimler: ['1', 'X'] },
-    { t1: 'Rizespor',           t2: 'Göztepe',            tarih: '01.09 20:00', lig: 'Süper Lig',   tip: 'tek',   secimler: ['1'] },
-    { t1: 'Sivasspor',          t2: 'Gaziantep FK',       tarih: '01.09 20:00', lig: 'Süper Lig',   tip: 'cift',  secimler: ['1', 'X'] },
-    { t1: 'Arsenal',            t2: 'Brighton',           tarih: '31.08 14:30', lig: 'Premier Lig', tip: 'banko', secimler: ['1'] },
-    { t1: 'Manchester United',  t2: 'Liverpool',          tarih: '01.09 18:00', lig: 'Premier Lig', tip: 'cift',  secimler: ['X', '2'] },
-    { t1: 'Juventus',           t2: 'Roma',               tarih: '01.09 21:45', lig: 'Serie A',     tip: 'cift',  secimler: ['1', 'X'] },
-    { t1: 'Lazio',              t2: 'Milan',              tarih: '31.08 21:45', lig: 'Serie A',     tip: 'cift',  secimler: ['1', '2'] },
-    { t1: 'Real Madrid',        t2: 'Real Betis',         tarih: '01.09 22:30', lig: 'La Liga',     tip: 'banko', secimler: ['1'] },
-    { t1: 'Bayern Münih',       t2: 'Freiburg',           tarih: '01.09 18:30', lig: 'Bundesliga',  tip: 'banko', secimler: ['1'] },
+    { t1: 'Gençlerbirliği',            t2: 'Erzurumspor FK',         tarih: '30.08 19:00', lig: '1. Lig',       tip: 'cift',  secimler: ['1', 'X'] },
+    { t1: 'Tümosan Konyaspor',         t2: 'Kocaelispor',            tarih: '30.08 19:00', lig: 'Süper Lig',   tip: 'cift',  secimler: ['1', 'X'] },
+    { t1: 'Galatasaray',               t2: 'Göztepe',                tarih: '30.08 21:30', lig: 'Süper Lig',   tip: 'banko', secimler: ['1'] },
+    { t1: 'Gaziantep FK',              t2: 'Çaykur Rizespor',        tarih: '30.08 21:30', lig: 'Süper Lig',   tip: 'cift',  secimler: ['1', 'X'] },
+    { t1: 'Eyüpspor',                  t2: 'Corendon Alanyaspor',    tarih: '31.08 19:00', lig: 'Süper Lig',   tip: 'cift',  secimler: ['1', 'X'] },
+    { t1: 'İstanbul Başakşehir',       t2: 'Kasımpaşa',              tarih: '31.08 19:00', lig: 'Süper Lig',   tip: 'banko', secimler: ['1'] },
+    { t1: 'Samsunspor',                t2: 'Fenerbahçe',             tarih: '31.08 21:30', lig: 'Süper Lig',   tip: 'cift',  secimler: ['X', '2'] },
+    { t1: 'Amed Sportif Faaliyetler',  t2: 'Trabzonspor',            tarih: '31.08 21:30', lig: 'Süper Lig',   tip: 'banko', secimler: ['2'] },
+    { t1: 'Beşiktaş',                  t2: 'Arca Çorum FK',          tarih: '01.09 20:00', lig: 'Süper Lig',   tip: 'banko', secimler: ['1'] },
+    { t1: 'Borussia Dortmund',         t2: 'Hamburger SV',           tarih: '31.08 16:30', lig: 'Bundesliga',  tip: 'banko', secimler: ['1'] },
+    { t1: 'Lille',                     t2: 'Paris St Germain',       tarih: '01.09 21:45', lig: 'Ligue 1',     tip: 'cift',  secimler: ['X', '2'] },
+    { t1: 'Monaco',                    t2: 'Marsilya',               tarih: '01.09 21:45', lig: 'Ligue 1',     tip: 'cift',  secimler: ['1', 'X'] },
+    { t1: 'Tottenham Hotspur',         t2: 'Newcastle United',       tarih: '01.09 15:30', lig: 'Premier Lig', tip: 'cift',  secimler: ['1', '2'] },
+    { t1: 'Sevilla',                   t2: 'Atletico Madrid',        tarih: '01.09 22:30', lig: 'La Liga',     tip: 'cift',  secimler: ['X', '2'] },
+    { t1: 'Cagliari',                  t2: 'Inter',                  tarih: '01.09 21:45', lig: 'Serie A',     tip: 'banko', secimler: ['2'] },
   ];
 
   return macVerileri.map((m, i) => ({
