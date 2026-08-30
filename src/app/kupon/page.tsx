@@ -75,10 +75,19 @@ export default function KuponSayfasi() {
     return kolonlar;
   }, [maclar, aktifFormul, filtreler, filtreAktif]);
 
+  // Canlı Sonuçlar State'i (Varsayılan olarak resmi sonuçlar yüklenir)
+  const [canliSonuclar, setCanliSonuclar] = useState<Record<number, MacSecim | null>>(() => {
+    const baslangic: Record<number, MacSecim | null> = {};
+    GUNCEL_CANLI_SKORLAR.forEach((s) => {
+      if (s.sonuc) baslangic[s.macNo] = s.sonuc;
+    });
+    return baslangic;
+  });
+
   // O ana kadar gerçekleşen maçların canlı analizi
   const kuponCanliDurum = useMemo(() => {
-    const bitenVeyaCanli = GUNCEL_CANLI_SKORLAR.filter((s) => s.sonuc !== null);
-    const oynananSayi = bitenVeyaCanli.length;
+    const oynananMacNolar = Object.keys(canliSonuclar).map(Number).filter((no) => canliSonuclar[no] !== null);
+    const oynananSayi = oynananMacNolar.length;
     const kalanSayi = 15 - oynananSayi;
 
     let canli15 = 0;
@@ -88,9 +97,10 @@ export default function KuponSayfasi() {
 
     uretilenKolonlar.forEach((kolon) => {
       let yanlis = 0;
-      bitenVeyaCanli.forEach((canli) => {
-        const tahmin = kolon.tahminler[canli.macNo - 1];
-        if (tahmin && tahmin !== canli.sonuc) {
+      oynananMacNolar.forEach((macNo) => {
+        const gerceklesen = canliSonuclar[macNo];
+        const tahmin = kolon.tahminler[macNo - 1];
+        if (tahmin && gerceklesen && tahmin !== gerceklesen) {
           yanlis++;
         }
       });
@@ -110,7 +120,15 @@ export default function KuponSayfasi() {
       canli13,
       canli12,
     };
-  }, [uretilenKolonlar]);
+  }, [uretilenKolonlar, canliSonuclar]);
+
+  // Tek maçın canlı sonucunu değiştirme
+  const canliSonucDegistir = (macNo: number, secim: MacSecim) => {
+    setCanliSonuclar((prev) => ({
+      ...prev,
+      [macNo]: prev[macNo] === secim ? null : secim,
+    }));
+  };
 
   // Buluta & LocalStorage'a Kaydet (Hibrit)
   const bulutaKaydet = async () => {
@@ -272,15 +290,17 @@ export default function KuponSayfasi() {
                         {/* Canlı Skor & Durum Rozeti */}
                         {(() => {
                           const canli = GUNCEL_CANLI_SKORLAR.find((s) => s.macNo === mac.id);
-                          if (!canli) return null;
+                          const secilenSonuc = canliSonuclar[mac.id];
 
-                          if (canli.durum === 'BITTI') {
-                            const tuttu = mac.secimler.includes(canli.sonuc as MacSecim);
+                          if (secilenSonuc) {
+                            const tuttu = mac.secimler.includes(secilenSonuc);
                             return (
                               <div className="flex items-center gap-1.5 flex-shrink-0">
-                                <span className="text-xs font-bold text-slate-300">
-                                  {canli.evSkor}-{canli.depSkor} (MS)
-                                </span>
+                                {canli && canli.evSkor !== null && (
+                                  <span className="text-xs font-bold text-slate-300">
+                                    {canli.evSkor}-{canli.depSkor} ({canli.dakika})
+                                  </span>
+                                )}
                                 <span
                                   style={{
                                     fontSize: 10,
@@ -292,30 +312,7 @@ export default function KuponSayfasi() {
                                     border: `1px solid ${tuttu ? '#10b981' : '#ef4444'}`,
                                   }}
                                 >
-                                  {tuttu ? '✅ TUTTU' : '❌ YATTI'}
-                                </span>
-                              </div>
-                            );
-                          }
-
-                          if (canli.durum === 'CANLI') {
-                            const tutuyor = mac.secimler.includes(canli.sonuc as MacSecim);
-                            return (
-                              <div className="flex items-center gap-1.5 flex-shrink-0">
-                                <span className="text-xs font-bold text-amber-400 animate-pulse">
-                                  🔴 {canli.evSkor}-{canli.depSkor} ({canli.dakika})
-                                </span>
-                                <span
-                                  style={{
-                                    fontSize: 10,
-                                    fontWeight: 700,
-                                    padding: '1px 5px',
-                                    borderRadius: 4,
-                                    background: tutuyor ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                                    color: tutuyor ? '#34d399' : '#fbbf24',
-                                  }}
-                                >
-                                  {tutuyor ? 'Önde' : 'Takipte'}
+                                  {tuttu ? `✅ ${secilenSonuc} TUTTU` : `❌ ${secilenSonuc} YATTI`}
                                 </span>
                               </div>
                             );
@@ -323,50 +320,80 @@ export default function KuponSayfasi() {
 
                           return (
                             <span className="text-[11px] text-slate-500 flex-shrink-0">
-                              ⏳ {canli.dakika}
+                              ⏳ {canli?.dakika || 'Bekliyor'}
                             </span>
                           );
                         })()}
                       </div>
 
-                      <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        {mac.lig && (
+                      <div className="flex items-center justify-between gap-2 mt-1 flex-wrap">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {mac.lig && (
+                            <span
+                              style={{
+                                color: '#94a3b8',
+                                fontSize: 10,
+                                fontWeight: 700,
+                                background: 'rgba(99,102,241,0.08)',
+                                padding: '1px 5px',
+                                borderRadius: 4,
+                              }}
+                            >
+                              {mac.lig}
+                            </span>
+                          )}
+
+                          {/* AI Tahmin Olasılıkları */}
+                          <div className="flex items-center gap-1 text-[10px] text-slate-400">
+                            <span className={analiz.olasilik1 >= 45 ? 'text-sky-400 font-bold' : ''}>1: %{analiz.olasilik1}</span>
+                            <span>·</span>
+                            <span className={analiz.olasilikX >= 30 ? 'text-amber-400 font-bold' : ''}>X: %{analiz.olasilikX}</span>
+                            <span>·</span>
+                            <span className={analiz.olasilik2 >= 40 ? 'text-rose-400 font-bold' : ''}>2: %{analiz.olasilik2}</span>
+                          </div>
+
+                          {/* AI Öneri Rozeti */}
                           <span
                             style={{
-                              color: '#94a3b8',
                               fontSize: 10,
                               fontWeight: 700,
-                              background: 'rgba(99,102,241,0.08)',
-                              padding: '1px 5px',
+                              padding: '1px 6px',
                               borderRadius: 4,
+                              background: 'rgba(16, 185, 129, 0.15)',
+                              color: '#34d399',
                             }}
                           >
-                            {mac.lig}
+                            AI: {analiz.aiOneri.join('-')}
                           </span>
-                        )}
-
-                        {/* AI Tahmin Olasılıkları */}
-                        <div className="flex items-center gap-1 text-[10px] text-slate-400">
-                          <span className={analiz.olasilik1 >= 45 ? 'text-sky-400 font-bold' : ''}>1: %{analiz.olasilik1}</span>
-                          <span>·</span>
-                          <span className={analiz.olasilikX >= 30 ? 'text-amber-400 font-bold' : ''}>X: %{analiz.olasilikX}</span>
-                          <span>·</span>
-                          <span className={analiz.olasilik2 >= 40 ? 'text-rose-400 font-bold' : ''}>2: %{analiz.olasilik2}</span>
                         </div>
 
-                        {/* AI Öneri Rozeti */}
-                        <span
-                          style={{
-                            fontSize: 10,
-                            fontWeight: 700,
-                            padding: '1px 6px',
-                            borderRadius: 4,
-                            background: 'rgba(16, 185, 129, 0.15)',
-                            color: '#34d399',
-                          }}
-                        >
-                          AI: {analiz.aiOneri.join('-')}
-                        </span>
+                        {/* Canlı Sonuç Seçici (1, X, 2) */}
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px] text-slate-500 font-semibold">Canlı Sonuç:</span>
+                          {(['1', 'X', '2'] as MacSecimOption[]).map((s) => {
+                            const aktif = canliSonuclar[mac.id] === s;
+                            return (
+                              <button
+                                key={s}
+                                onClick={() => canliSonucDegistir(mac.id, s as MacSecim)}
+                                title={`Bu maçı canlı olarak '${s}' bitti yap`}
+                                style={{
+                                  padding: '1px 5px',
+                                  fontSize: 10,
+                                  fontWeight: 800,
+                                  borderRadius: 4,
+                                  border: '1px solid',
+                                  cursor: 'pointer',
+                                  background: aktif ? 'rgba(99, 102, 241, 0.3)' : 'rgba(15, 23, 42, 0.6)',
+                                  borderColor: aktif ? '#818cf8' : 'rgba(148, 163, 184, 0.2)',
+                                  color: aktif ? '#a5b4fc' : '#64748b',
+                                }}
+                              >
+                                {s}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
                     </div>
                   )}
