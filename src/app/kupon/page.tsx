@@ -9,9 +9,10 @@ import { sayiFormat } from '@/lib/utils';
 import { macAnaliziGetir, aiKuponOlustur, type SihirbazStratejisi } from '@/lib/ai-tahmin';
 import KolonOnizlemeModal from '@/components/KolonOnizlemeModal';
 import AiSihirbaz from '@/components/AiSihirbaz';
+import AuthModal from '@/components/AuthModal';
 import {
   Trophy, TrendingDown, Zap, Info, CheckCircle,
-  AlertCircle, Star, ArrowRight, Download, Share2, Sparkles
+  AlertCircle, Star, ArrowRight, Download, Share2, Sparkles, Cloud
 } from 'lucide-react';
 import { GUNCEL_LISTE } from '@/store/kupon-store';
 import Link from 'next/link';
@@ -37,6 +38,8 @@ export default function KuponSayfasi() {
 
   const [duzenlemeModu, setDuzenlemeModu] = useState(false);
   const [modalAcik, setModalAcik] = useState(false);
+  const [authModalAcik, setAuthModalAcik] = useState(false);
+  const [kaydediliyor, setKaydediliyor] = useState(false);
   const formuller = tumFormullerKarsilastir(kolonSayisi);
 
   // Gerçek kolan sayısı hesapları
@@ -67,6 +70,43 @@ export default function KuponSayfasi() {
 
     return kolonlar;
   }, [maclar, aktifFormul, filtreler, filtreAktif]);
+
+  // Buluta Kaydet
+  const bulutaKaydet = async () => {
+    setKaydediliyor(true);
+    try {
+      const res = await fetch('/api/kuponlar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: `Spor Toto ${GUNCEL_LISTE.hafta}. Hafta Kuponu`,
+          hafta: GUNCEL_LISTE.hafta,
+          maclar,
+          secilenKolonlar: uretilenKolonlar.slice(0, 100),
+          aktifFormul,
+          toplamKolon: gosterilecekKolonSayisi,
+          maliyet: gosterilecekMaliyet,
+        }),
+      });
+
+      if (res.status === 401) {
+        toast.error('Kupon kaydetmek için lütfen giriş yapın');
+        setAuthModalAcik(true);
+        setKaydediliyor(false);
+        return;
+      }
+
+      if (res.ok) {
+        toast.success('Kupon buluta başarıyla kaydedildi!');
+      } else {
+        toast.error('Kupon kaydedilemedi');
+      }
+    } catch {
+      toast.error('Bağlantı hatası oluştu');
+    } finally {
+      setKaydediliyor(false);
+    }
+  };
 
   // AI Stratejisi uygulama
   const handleStratejiUygula = (strateji: SihirbazStratejisi) => {
@@ -342,13 +382,13 @@ export default function KuponSayfasi() {
             </div>
 
             {/* Kolonları Gör & Dışa Aktar Butonları */}
-            <div className="grid grid-cols-2 gap-2 mb-6">
+            <div className="grid grid-cols-2 gap-2 mb-2">
               <button
                 onClick={() => setModalAcik(true)}
                 className="btn-primary flex items-center justify-center gap-2 text-xs py-3"
               >
                 <Download size={14} />
-                Kolonları İndir / Gör
+                Kolonları Gör
               </button>
 
               <button
@@ -359,6 +399,16 @@ export default function KuponSayfasi() {
                 WhatsApp'ta Paylaş
               </button>
             </div>
+
+            {/* Buluta Kaydet Butonu */}
+            <button
+              onClick={bulutaKaydet}
+              disabled={kaydediliyor}
+              className="btn-success w-full py-3 text-xs flex items-center justify-center gap-2 mb-6"
+            >
+              <Cloud size={14} />
+              {kaydediliyor ? 'Kaydediliyor...' : 'Kuponu Buluta Kaydet'}
+            </button>
 
             {/* Özet */}
             <div className="space-y-2 mb-6">
@@ -492,6 +542,12 @@ export default function KuponSayfasi() {
         kolonlar={uretilenKolonlar}
         maclar={maclar}
         baslik={`35. Hafta Üretilen Kolonlar (${uretilenKolonlar.length} Adet)`}
+      />
+
+      {/* Giriş / Kayıt Modalı */}
+      <AuthModal
+        acik={authModalAcik}
+        onKapat={() => setAuthModalAcik(false)}
       />
     </div>
   );

@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-sportotosecure2026}@postgres:5432/${DB_NAME:-sportotodb}?schema=public
+      - JWT_SECRET=${JWT_SECRET:-sportoto-super-secret-jwt-key-2026}
+      - NEXT_PUBLIC_SITE_URL=https://sportoto.seymata.com
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${DB_USER:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-sportotosecure2026}
+      - POSTGRES_DB=${DB_NAME:-sportotodb}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres_data:

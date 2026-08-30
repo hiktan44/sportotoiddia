@@ -1,0 +1,66 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String      @id @default(uuid())
+  email        String      @unique
+  passwordHash String
+  name         String?
+  role         String      @default("USER") // USER, ADMIN
+  kuponlar     Kupon[]
+  ortakKasalar OrtakKasa[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model Kupon {
+  id              String      @id @default(uuid())
+  userId          String
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title           String      @default("Spor Toto Kuponu")
+  hafta           Int         @default(35)
+  maclar          Json        // 15 maçın seçimleri ve modları
+  secilenKolonlar Json?       // İndirgenmiş/filtrelenmiş kolon dizisi
+  aktifFormul     String?
+  toplamKolon     Int
+  maliyet         Float
+  ortakKasalar    OrtakKasa[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model OrtakKasa {
+  id           String   @id @default(uuid())
+  kuponId      String?
+  kupon        Kupon?   @relation(fields: [kuponId], references: [id], onDelete: SetNull)
+  ownerId      String
+  owner        User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  title        String
+  hedefMaliyet Float
+  toplananTL   Float    @default(0)
+  uyeler       Json     // [{ id, ad, katkiTL, payOrani }]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model CanliMac {
+  id                String   @id @default(uuid())
+  hafta             Int
+  macNo             Int
+  evTakim           String
+  depTakim          String
+  evSkor            Int?
+  depSkor           Int?
+  dakika            String?  // örn. "45'", "MS", "İY", "Henüz Başlamadı"
+  durum             String   @default("BASLAMADI") // BASLAMADI, CANLI, BITTI
+  sonuc             String?  // "1", "X", "2"
+  guncellenmeZamani DateTime @default(now()) @updatedAt
+
+  @@unique([hafta, macNo])
+}
