@@ -11,15 +11,15 @@ export interface CanliMacDurum {
   sonuc: MacSecim | null;
 }
 
-// 2026/2027 3. Hafta Gerçekleşen ve Güncel Canlı Skorlar
+// 2026/2027 3. Hafta Resmi Iddaa.com & Spor Toto Canlı Skor Durumu
 export const GUNCEL_CANLI_SKORLAR: CanliMacDurum[] = [
   { macNo: 1, evTakim: 'Gençlerbirliği', depTakim: 'Erzurumspor FK', evSkor: 1, depSkor: 1, dakika: 'MS', durum: 'BITTI', sonuc: 'X' },
   { macNo: 2, evTakim: 'Tümosan Konyaspor', depTakim: 'Kocaelispor', evSkor: 1, depSkor: 2, dakika: 'MS', durum: 'BITTI', sonuc: '2' },
   { macNo: 3, evTakim: 'Galatasaray', depTakim: 'Göztepe', evSkor: 3, depSkor: 2, dakika: 'MS', durum: 'BITTI', sonuc: '1' },
-  { macNo: 4, evTakim: 'Gaziantep FK', depTakim: 'Çaykur Rizespor', evSkor: 1, depSkor: 1, dakika: 'MS', durum: 'BITTI', sonuc: 'X' },
+  { macNo: 4, evTakim: 'Gaziantep FK', depTakim: 'Çaykur Rizespor', evSkor: 1, depSkor: 2, dakika: 'MS', durum: 'BITTI', sonuc: '2' },
   { macNo: 5, evTakim: 'Eyüpspor', depTakim: 'Corendon Alanyaspor', evSkor: 2, depSkor: 1, dakika: 'MS', durum: 'BITTI', sonuc: '1' },
-  { macNo: 6, evTakim: 'İstanbul Başakşehir', depTakim: 'Kasımpaşa', evSkor: 1, depSkor: 0, dakika: 'MS', durum: 'BITTI', sonuc: '1' },
-  { macNo: 7, evTakim: 'Samsunspor', depTakim: 'Fenerbahçe', evSkor: 0, depSkor: 1, dakika: 'MS', durum: 'BITTI', sonuc: '2' },
+  { macNo: 6, evTakim: 'İstanbul Başakşehir', depTakim: 'Kasımpaşa', evSkor: 1, depSkor: 0, dakika: '58\' (Canlı)', durum: 'CANLI', sonuc: '1' },
+  { macNo: 7, evTakim: 'Samsunspor', depTakim: 'Fenerbahçe', evSkor: 0, depSkor: 1, dakika: '58\' (Canlı)', durum: 'CANLI', sonuc: '2' },
   { macNo: 8, evTakim: 'Amed Sportif Faaliyetler', depTakim: 'Trabzonspor', evSkor: null, depSkor: null, dakika: '31.08 21:30', durum: 'BASLAMADI', sonuc: null },
   { macNo: 9, evTakim: 'Beşiktaş', depTakim: 'Arca Çorum FK', evSkor: null, depSkor: null, dakika: '01.09 20:00', durum: 'BASLAMADI', sonuc: null },
   { macNo: 10, evTakim: 'Borussia Dortmund', depTakim: 'Hamburger SV', evSkor: 2, depSkor: 0, dakika: 'MS', durum: 'BITTI', sonuc: '1' },
