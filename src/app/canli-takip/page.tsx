@@ -39,6 +39,24 @@ export default function CanliTakipSayfasi() {
     }));
   };
 
+  // Canlı skorları API'den otomatik çek
+  const canliSkorlariGetir = async () => {
+    try {
+      const res = await fetch('/api/canli-skorlar?hafta=3&refresh=true');
+      const data = await res.json();
+      if (data.maclar && Array.isArray(data.maclar)) {
+        const yeniSonuclar: Record<number, MacSecim | null> = {};
+        data.maclar.forEach((m: any) => {
+          if (m.sonuc) yeniSonuclar[m.macNo] = m.sonuc as MacSecim;
+        });
+        setCanliSonuclar(yeniSonuclar);
+        toast.success('Canlı skorlar başarıyla güncellendi!');
+      }
+    } catch {
+      toast.error('Canlı skorlar çekilemedi');
+    }
+  };
+
   const sonuclariSifirla = () => {
     setCanliSonuclar({});
     toast.success('Canlı sonuçlar sıfırlandı');
@@ -112,8 +130,11 @@ export default function CanliTakipSayfasi() {
         </div>
 
         <div className="flex items-center gap-3">
-          <button onClick={sonuclariSifirla} className="btn-secondary text-sm flex items-center gap-2">
+          <button onClick={canliSkorlariGetir} className="btn-primary text-sm flex items-center gap-2">
             <RefreshCcw size={14} />
+            Canlı Skorları Çek
+          </button>
+          <button onClick={sonuclariSifirla} className="btn-secondary text-sm flex items-center gap-2">
             Sonuçları Temizle
           </button>
         </div>
