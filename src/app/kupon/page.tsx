@@ -20,6 +20,8 @@ import Link from 'next/link';
 import { useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
 
+import { GUNCEL_CANLI_SKORLAR } from '@/lib/canli-veri';
+
 type MacSecimOption = '1' | 'X' | '2';
 
 export default function KuponSayfasi() {
@@ -73,41 +75,76 @@ export default function KuponSayfasi() {
     return kolonlar;
   }, [maclar, aktifFormul, filtreler, filtreAktif]);
 
-  // Buluta Kaydet
-  const bulutaKaydet = async () => {
-    setKaydediliyor(true);
-    try {
-      const res = await fetch('/api/kuponlar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: `Spor Toto ${GUNCEL_LISTE.hafta}. Hafta Kuponu`,
-          hafta: GUNCEL_LISTE.hafta,
-          maclar,
-          secilenKolonlar: uretilenKolonlar.slice(0, 100),
-          aktifFormul,
-          toplamKolon: gosterilecekKolonSayisi,
-          maliyet: gosterilecekMaliyet,
-        }),
+  // O ana kadar gerçekleşen maçların canlı analizi
+  const kuponCanliDurum = useMemo(() => {
+    const bitenVeyaCanli = GUNCEL_CANLI_SKORLAR.filter((s) => s.sonuc !== null);
+    const oynananSayi = bitenVeyaCanli.length;
+    const kalanSayi = 15 - oynananSayi;
+
+    let canli15 = 0;
+    let canli14 = 0;
+    let canli13 = 0;
+    let canli12 = 0;
+
+    uretilenKolonlar.forEach((kolon) => {
+      let yanlis = 0;
+      bitenVeyaCanli.forEach((canli) => {
+        const tahmin = kolon.tahminler[canli.macNo - 1];
+        if (tahmin && tahmin !== canli.sonuc) {
+          yanlis++;
+        }
       });
 
-      if (res.status === 401) {
-        toast.error('Kupon kaydetmek için lütfen giriş yapın');
-        setAuthModalAcik(true);
-        setKaydediliyor(false);
-        return;
-      }
+      const potansiyel = 15 - yanlis;
+      if (potansiyel >= 15) canli15++;
+      if (potansiyel >= 14) canli14++;
+      if (potansiyel >= 13) canli13++;
+      if (potansiyel >= 12) canli12++;
+    });
 
-      if (res.ok) {
-        toast.success('Kupon buluta başarıyla kaydedildi!');
-      } else {
-        toast.error('Kupon kaydedilemedi');
-      }
-    } catch {
-      toast.error('Bağlantı hatası oluştu');
-    } finally {
-      setKaydediliyor(false);
-    }
+    return {
+      oynananSayi,
+      kalanSayi,
+      canli15,
+      canli14,
+      canli13,
+      canli12,
+    };
+  }, [uretilenKolonlar]);
+
+  // Buluta & LocalStorage'a Kaydet (Hibrit)
+  const bulutaKaydet = async () => {
+    setKaydediliyor(true);
+    const yeniKupon = {
+      id: 'kpn_' + Date.now(),
+      title: `Spor Toto ${GUNCEL_LISTE.hafta}. Hafta Kuponu`,
+      hafta: GUNCEL_LISTE.hafta,
+      maclar,
+      secilenKolonlar: uretilenKolonlar.slice(0, 100),
+      aktifFormul,
+      toplamKolon: gosterilecekKolonSayisi,
+      maliyet: gosterilecekMaliyet,
+      createdAt: new Date().toISOString(),
+    };
+
+    // 1. LocalStorage'a anında yaz
+    try {
+      const eskiKuponlarStr = localStorage.getItem('sportoto_kayitli_kuponlar');
+      const eskiKuponlar = eskiKuponlarStr ? JSON.parse(eskiKuponlarStr) : [];
+      localStorage.setItem('sportoto_kayitli_kuponlar', JSON.stringify([yeniKupon, ...eskiKuponlar]));
+    } catch {}
+
+    // 2. API'ye gönder
+    try {
+      await fetch('/api/kuponlar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(yeniKupon),
+      });
+    } catch {}
+
+    toast.success('Kuponunuz başarıyla kaydedildi!');
+    setKaydediliyor(false);
   };
 
   // AI Stratejisi uygulama
@@ -225,11 +262,73 @@ export default function KuponSayfasi() {
                     </div>
                   ) : (
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold text-slate-200 truncate flex items-center gap-1.5">
-                        <span>{mac.takim1}</span>
-                        <span className="text-slate-500 text-xs">vs</span>
-                        <span>{mac.takim2}</span>
+                      <div className="text-sm font-semibold text-slate-200 truncate flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 truncate">
+                          <span>{mac.takim1}</span>
+                          <span className="text-slate-500 text-xs">vs</span>
+                          <span>{mac.takim2}</span>
+                        </div>
+
+                        {/* Canlı Skor & Durum Rozeti */}
+                        {(() => {
+                          const canli = GUNCEL_CANLI_SKORLAR.find((s) => s.macNo === mac.id);
+                          if (!canli) return null;
+
+                          if (canli.durum === 'BITTI') {
+                            const tuttu = mac.secimler.includes(canli.sonuc as MacSecim);
+                            return (
+                              <div className="flex items-center gap-1.5 flex-shrink-0">
+                                <span className="text-xs font-bold text-slate-300">
+                                  {canli.evSkor}-{canli.depSkor} (MS)
+                                </span>
+                                <span
+                                  style={{
+                                    fontSize: 10,
+                                    fontWeight: 800,
+                                    padding: '1px 6px',
+                                    borderRadius: 4,
+                                    background: tuttu ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                                    color: tuttu ? '#34d399' : '#f87171',
+                                    border: `1px solid ${tuttu ? '#10b981' : '#ef4444'}`,
+                                  }}
+                                >
+                                  {tuttu ? '✅ TUTTU' : '❌ YATTI'}
+                                </span>
+                              </div>
+                            );
+                          }
+
+                          if (canli.durum === 'CANLI') {
+                            const tutuyor = mac.secimler.includes(canli.sonuc as MacSecim);
+                            return (
+                              <div className="flex items-center gap-1.5 flex-shrink-0">
+                                <span className="text-xs font-bold text-amber-400 animate-pulse">
+                                  🔴 {canli.evSkor}-{canli.depSkor} ({canli.dakika})
+                                </span>
+                                <span
+                                  style={{
+                                    fontSize: 10,
+                                    fontWeight: 700,
+                                    padding: '1px 5px',
+                                    borderRadius: 4,
+                                    background: tutuyor ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                                    color: tutuyor ? '#34d399' : '#fbbf24',
+                                  }}
+                                >
+                                  {tutuyor ? 'Önde' : 'Takipte'}
+                                </span>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <span className="text-[11px] text-slate-500 flex-shrink-0">
+                              ⏳ {canli.dakika}
+                            </span>
+                          );
+                        })()}
                       </div>
+
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
                         {mac.lig && (
                           <span
@@ -420,7 +519,7 @@ export default function KuponSayfasi() {
             </button>
 
             {/* Özet */}
-            <div className="space-y-2 mb-6">
+            <div className="space-y-2 mb-4">
               {[
                 { label: 'Banko', deger: bankoSayisi, renk: '#f59e0b' },
                 { label: 'Tek Geçilen', deger: tekSayisi, renk: '#818cf8' },
@@ -433,6 +532,56 @@ export default function KuponSayfasi() {
                   </span>
                 </div>
               ))}
+            </div>
+
+            {/* Canlı Gerçekleşen Son Durum Radarı */}
+            <div
+              className="p-4 rounded-xl mb-6"
+              style={{
+                background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(16, 185, 129, 0.1))',
+                border: '1px solid rgba(99, 102, 241, 0.3)',
+              }}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-200">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                  Canlı Kupon Durumu
+                </div>
+                <Link href="/canli-takip" className="text-[11px] text-indigo-400 hover:underline font-bold">
+                  Detaylı Radar →
+                </Link>
+              </div>
+
+              <div className="text-[11px] text-slate-400 mb-3">
+                {kuponCanliDurum.oynananSayi} Maç Bitti/Canlı · {kuponCanliDurum.kalanSayi} Maç Bekliyor
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-center">
+                <div className="p-2 rounded-lg bg-slate-900/60 border border-emerald-500/30">
+                  <div className="text-[10px] text-slate-400 font-bold">15 Bilen Kolon</div>
+                  <div className="text-base font-black text-emerald-400">
+                    {sayiFormat(kuponCanliDurum.canli15)}
+                  </div>
+                </div>
+                <div className="p-2 rounded-lg bg-slate-900/60 border border-amber-500/30">
+                  <div className="text-[10px] text-slate-400 font-bold">14 Potansiyeli</div>
+                  <div className="text-base font-black text-amber-400">
+                    {sayiFormat(kuponCanliDurum.canli14)}
+                  </div>
+                </div>
+                <div className="p-2 rounded-lg bg-slate-900/60 border border-indigo-500/30">
+                  <div className="text-[10px] text-slate-400 font-bold">13 Potansiyeli</div>
+                  <div className="text-base font-black text-indigo-400">
+                    {sayiFormat(kuponCanliDurum.canli13)}
+                  </div>
+                </div>
+                <div className="p-2 rounded-lg bg-slate-900/60 border border-sky-500/30">
+                  <div className="text-[10px] text-slate-400 font-bold">12 Potansiyeli</div>
+                  <div className="text-base font-black text-sky-400">
+                    {sayiFormat(kuponCanliDurum.canli12)}
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="divider" />

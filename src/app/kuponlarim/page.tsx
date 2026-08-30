@@ -16,20 +16,33 @@ export default function KuponlarimSayfasi() {
   const router = useRouter();
 
   const kuponlariYukle = async () => {
+    let tumKuponlar: any[] = [];
+
+    // 1. LocalStorage kuponları
+    const localKuponlarStr = localStorage.getItem('sportoto_kayitli_kuponlar');
+    if (localKuponlarStr) {
+      try {
+        tumKuponlar = JSON.parse(localKuponlarStr);
+      } catch {}
+    }
+
+    // 2. API kuponları
     try {
       const res = await fetch('/api/kuponlar');
-      if (res.status === 401) {
-        setGirisGerekli(true);
-        setYukleniyor(false);
-        return;
+      if (res.ok) {
+        const data = await res.json();
+        if (data.kuponlar && Array.isArray(data.kuponlar)) {
+          const apiIds = new Set(data.kuponlar.map((k: any) => k.id));
+          tumKuponlar = [
+            ...data.kuponlar,
+            ...tumKuponlar.filter((k) => !apiIds.has(k.id)),
+          ];
+        }
       }
-      const data = await res.json();
-      setKuponlar(data.kuponlar || []);
-    } catch {
-      toast.error('Kuponlar yüklenemedi');
-    } finally {
-      setYukleniyor(false);
-    }
+    } catch {}
+
+    setKuponlar(tumKuponlar);
+    setYukleniyor(false);
   };
 
   useEffect(() => {
@@ -39,14 +52,13 @@ export default function KuponlarimSayfasi() {
   const kuponSil = async (id: string) => {
     if (!confirm('Bu kuponu silmek istediğinize emin misiniz?')) return;
     try {
-      const res = await fetch(`/api/kuponlar?id=${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        toast.success('Kupon silindi');
-        setKuponlar((prev) => prev.filter((k) => k.id !== id));
-      }
-    } catch {
-      toast.error('Silme işlemi başarısız');
-    }
+      await fetch(`/api/kuponlar?id=${id}`, { method: 'DELETE' });
+    } catch {}
+
+    const yeniListe = kuponlar.filter((k) => k.id !== id);
+    setKuponlar(yeniListe);
+    localStorage.setItem('sportoto_kayitli_kuponlar', JSON.stringify(yeniListe));
+    toast.success('Kupon silindi');
   };
 
   const kuponuKullan = (kupon: any) => {

@@ -24,10 +24,22 @@ export default function Navbar() {
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
+    // 1. Önce LocalStorage kontrolü
+    const localUser = localStorage.getItem('sportoto_aktif_kullanici');
+    if (localUser) {
+      try {
+        setUser(JSON.parse(localUser));
+      } catch {}
+    }
+
+    // 2. API oturum kontrolü
     fetch('/api/auth/me')
       .then((res) => res.json())
       .then((data) => {
-        if (data?.user) setUser(data.user);
+        if (data?.user) {
+          setUser(data.user);
+          localStorage.setItem('sportoto_aktif_kullanici', JSON.stringify(data.user));
+        }
       })
       .catch(() => {});
   }, []);
@@ -35,10 +47,11 @@ export default function Navbar() {
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
-      setUser(null);
-      toast.success('Çıkış yapıldı');
-      window.location.reload();
     } catch {}
+    localStorage.removeItem('sportoto_aktif_kullanici');
+    setUser(null);
+    toast.success('Çıkış yapıldı');
+    window.location.reload();
   };
 
   return (
