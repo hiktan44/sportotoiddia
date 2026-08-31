@@ -13,11 +13,11 @@ import AuthModal from '@/components/AuthModal';
 import TopluBultenModal from '@/components/TopluBultenModal';
 import {
   Trophy, TrendingDown, Zap, Info, CheckCircle,
-  AlertCircle, Star, ArrowRight, Download, Share2, Sparkles, Cloud, Edit3, ClipboardList
+  AlertCircle, Star, ArrowRight, Download, Share2, Sparkles, Cloud, Edit3, ClipboardList, RefreshCw
 } from 'lucide-react';
 import { GUNCEL_LISTE } from '@/store/kupon-store';
 import Link from 'next/link';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import toast from 'react-hot-toast';
 
 import { GUNCEL_CANLI_SKORLAR } from '@/lib/canli-veri';
@@ -122,13 +122,46 @@ export default function KuponSayfasi() {
     };
   }, [uretilenKolonlar, canliSonuclar]);
 
-  // Tek maçın canlı sonucunu değiştirme
+  // Canlı bülten ve skor senkronizasyonu
+  const [senkronizeEdiliyor, setSenkronizeEdiliyor] = useState(false);
+
+  const canliBulteniSenkronizeEt = async (sessiz = false) => {
+    if (!sessiz) setSenkronizeEdiliyor(true);
+    try {
+      const res = await fetch('/api/bulten-canli');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.maclar && Array.isArray(data.maclar)) {
+          const yeniSonuclar: Record<number, MacSecim | null> = {};
+          data.maclar.forEach((m: any) => {
+            if (m.sonuc) yeniSonuclar[m.id] = m.sonuc as MacSecim;
+          });
+          setCanliSonuclar(yeniSonuclar);
+          if (!sessiz) toast.success(`⚡ iddaa.com canlı bülteni ve skorları senkronize edildi! (${data.sonGuncelleme})`);
+        }
+      }
+    } catch {
+      if (!sessiz) toast.error('Canlı senkronizasyon başarısız');
+    } finally {
+      if (!sessiz) setSenkronizeEdiliyor(false);
+    }
+  };
+
+  // Tek maçın canlı sonucunu manuel değiştirme
   const canliSonucDegistir = (macNo: number, secim: MacSecim) => {
     setCanliSonuclar((prev) => ({
       ...prev,
       [macNo]: prev[macNo] === secim ? null : secim,
     }));
   };
+
+  // 60 saniyede bir otomatik canlı skor kontrolü
+  useEffect(() => {
+    const timer = setInterval(() => {
+      canliBulteniSenkronizeEt(true);
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Buluta & LocalStorage'a Kaydet (Hibrit)
   const bulutaKaydet = async () => {
@@ -215,6 +248,14 @@ export default function KuponSayfasi() {
               </p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
+              <button
+                className="btn-secondary text-xs flex items-center gap-1.5 py-2 px-3 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
+                onClick={() => canliBulteniSenkronizeEt(false)}
+                disabled={senkronizeEdiliyor}
+              >
+                <RefreshCw size={14} className={senkronizeEdiliyor ? 'animate-spin' : ''} />
+                {senkronizeEdiliyor ? 'Senkronize Ediliyor...' : '⚡ iddaa Canlı Çek'}
+              </button>
               <button
                 className="btn-secondary text-xs flex items-center gap-1.5 py-2 px-3"
                 onClick={() => setBultenModalAcik(true)}

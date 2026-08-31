@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useKuponStore } from '@/store/kupon-store';
 import { kombinasyonUret, type MacSecim } from '@/lib/kombinasyon';
 import { formuluUygula, hammingMesafesi } from '@/lib/formuller';
@@ -13,6 +13,39 @@ export default function CanliTakipSayfasi() {
 
   // Her maç için girilen canlı/biten sonuç
   const [canliSonuclar, setCanliSonuclar] = useState<Record<number, MacSecim | null>>({});
+  const [canliDetaylar, setCanliDetaylar] = useState<any[]>([]);
+  const [sonGuncelleme, setSonGuncelleme] = useState<string>('');
+  const [yukleniyor, setYukleniyor] = useState(false);
+
+  // Canlı skorları API'den otomatik çek
+  const canliSkorlariGetir = async (sessiz = false) => {
+    if (!sessiz) setYukleniyor(true);
+    try {
+      const res = await fetch('/api/bulten-canli');
+      const data = await res.json();
+      if (data.maclar && Array.isArray(data.maclar)) {
+        const yeniSonuclar: Record<number, MacSecim | null> = {};
+        data.maclar.forEach((m: any) => {
+          if (m.sonuc) yeniSonuclar[m.id] = m.sonuc as MacSecim;
+        });
+        setCanliSonuclar(yeniSonuclar);
+        setCanliDetaylar(data.maclar);
+        setSonGuncelleme(data.sonGuncelleme || new Date().toLocaleTimeString());
+        if (!sessiz) toast.success(`⚡ iddaa.com canlı bülteni ve skorları senkronize edildi! (${data.sonGuncelleme})`);
+      }
+    } catch {
+      if (!sessiz) toast.error('Canlı skorlar çekilemedi');
+    } finally {
+      if (!sessiz) setYukleniyor(false);
+    }
+  };
+
+  // Sayfa açıldığında ve her 60 saniyede bir otomatik canlı çek
+  useEffect(() => {
+    canliSkorlariGetir(true);
+    const interval = setInterval(() => canliSkorlariGetir(true), 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Oynanan kolonları üret
   const oynananKolonlar = useMemo(() => {
@@ -31,30 +64,12 @@ export default function CanliTakipSayfasi() {
     return kolonlar;
   }, [maclar, aktifFormul, filtreler, filtreAktif]);
 
-  // Sonuç girme
+  // Manuel sonuç girme
   const sonucBelirle = (macId: number, sonuc: MacSecim) => {
     setCanliSonuclar((prev) => ({
       ...prev,
       [macId]: prev[macId] === sonuc ? null : sonuc,
     }));
-  };
-
-  // Canlı skorları API'den otomatik çek
-  const canliSkorlariGetir = async () => {
-    try {
-      const res = await fetch('/api/canli-skorlar?hafta=3&refresh=true');
-      const data = await res.json();
-      if (data.maclar && Array.isArray(data.maclar)) {
-        const yeniSonuclar: Record<number, MacSecim | null> = {};
-        data.maclar.forEach((m: any) => {
-          if (m.sonuc) yeniSonuclar[m.macNo] = m.sonuc as MacSecim;
-        });
-        setCanliSonuclar(yeniSonuclar);
-        toast.success('Canlı skorlar başarıyla güncellendi!');
-      }
-    } catch {
-      toast.error('Canlı skorlar çekilemedi');
-    }
   };
 
   const sonuclariSifirla = () => {
@@ -130,9 +145,9 @@ export default function CanliTakipSayfasi() {
         </div>
 
         <div className="flex items-center gap-3">
-          <button onClick={canliSkorlariGetir} className="btn-primary text-sm flex items-center gap-2">
-            <RefreshCcw size={14} />
-            Canlı Skorları Çek
+          <button onClick={() => canliSkorlariGetir(false)} className="btn-primary text-sm flex items-center gap-2">
+            <RefreshCcw size={14} className={yukleniyor ? 'animate-spin' : ''} />
+            {yukleniyor ? 'Çekiliyor...' : '⚡ Canlı Skorları Çek'}
           </button>
           <button onClick={sonuclariSifirla} className="btn-secondary text-sm flex items-center gap-2">
             Sonuçları Temizle
