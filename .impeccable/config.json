@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "gradient-text",
+        "value": "*",
+        "files": [
+          "src/app/globals.css"
+        ],
+        "createdAt": "2026-09-20T08:43:19.512Z",
+        "reason": "Existing intentional sports-dashboard brand emphasis predates the legal/SEO change and remains limited to named heading styles."
+      }
+    ]
+  }
+}
