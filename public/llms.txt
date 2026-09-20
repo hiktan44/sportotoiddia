@@ -1,0 +1,9 @@
+# Spor Toto Optimizasyon
+
+> Kupon senaryolarını ve kolon maliyetlerini hesaplamaya yardımcı olan optimizasyon aracı.
+
+- Resmî site: https://sportoto.seymata.com/
+- Gizlilik ve KVKK: https://sportoto.seymata.com/privacy
+- Kullanım koşulları: https://sportoto.seymata.com/terms
+- Çerez politikası: https://sportoto.seymata.com/cookies
+- İletişim: https://sportoto.seymata.com/contact
