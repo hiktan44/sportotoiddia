@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getAuthUser } from '@/lib/auth';
+import { AuthStoreError, getAuthUser } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
   try {
-    const auth = getAuthUser(req);
+    const auth = await getAuthUser(req);
     if (!auth) {
       return NextResponse.json({ error: 'Giriş yapmanız gerekiyor.' }, { status: 401 });
     }
@@ -16,6 +16,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ kuponlar });
   } catch (error: any) {
+    if (error instanceof AuthStoreError) return NextResponse.json({error: error.message}, {status: 503});
     console.error('Kuponlar list error:', error);
     return NextResponse.json({ error: 'Kuponlar yüklenemedi.' }, { status: 500 });
   }
@@ -23,7 +24,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const auth = getAuthUser(req);
+    const auth = await getAuthUser(req);
     if (!auth) {
       return NextResponse.json({ error: 'Kupon kaydetmek için lütfen giriş yapın.' }, { status: 401 });
     }
@@ -46,6 +47,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ kupon, message: 'Kupon buluta başarıyla kaydedildi!' });
   } catch (error: any) {
+    if (error instanceof AuthStoreError) return NextResponse.json({error: error.message}, {status: 503});
     console.error('Kupon save error:', error);
     return NextResponse.json({ error: 'Kupon kaydedilemedi.' }, { status: 500 });
   }
@@ -53,7 +55,7 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
-    const auth = getAuthUser(req);
+    const auth = await getAuthUser(req);
     if (!auth) {
       return NextResponse.json({ error: 'Yetkiniz yok.' }, { status: 401 });
     }
@@ -70,6 +72,7 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ message: 'Kupon silindi.' });
   } catch (error: any) {
+    if (error instanceof AuthStoreError) return NextResponse.json({error: error.message}, {status: 503});
     return NextResponse.json({ error: 'Kupon silinemedi.' }, { status: 500 });
   }
 }

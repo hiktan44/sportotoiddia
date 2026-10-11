@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getAuthUser } from '@/lib/auth';
+import { AuthStoreError, getAuthUser } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
   try {
-    const auth = getAuthUser(req);
+    const auth = await getAuthUser(req);
     if (!auth) {
       return NextResponse.json({ user: null });
     }
@@ -16,6 +16,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ user });
   } catch (error) {
+    if (error instanceof AuthStoreError) return NextResponse.json({user: null, error: error.message}, {status: 503});
     return NextResponse.json({ user: null });
   }
 }
